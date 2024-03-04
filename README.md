@@ -8,7 +8,7 @@ This is comprehensive module for realme GT2 Pro (ferrari), it can be used with a
 ## Overheating
 Known issue 8 Gen 1 is overheating. My module fix it. What we have alternative?
 
-- [perf limit xiaomi 12] (https://github.com/Magisk-Modules-Alt-Repo/perf-limit-xiaomi-12 "GitHub")
+- [perf limit xiaomi 12](https://github.com/Magisk-Modules-Alt-Repo/perf-limit-xiaomi-12)
 - Frigus Thermal
 
 Perf limit, is only lock max freqs. It can't full fix overheating, but downgrade performance.
