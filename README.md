@@ -17,3 +17,9 @@ Frigus Thermal incorrect work, because it check CPU temperature sensors, what ca
 My module check CPU temp like Frigus, but correct value and then select one of limit for freqs like perf limit. But it doesn't all. I changed some kernel settings for better cooling device. It's all help FEXT show lowest temp in hard scenes and save performance bigger then MTK 8200 Ultra, SD870, Tensor G2
 ## Scrolling
 Second major issue 8 Gen 1 is freezing and lagging scroll. Discussion of the problem has begun September 2023 in 4PDA in thematic thread. My module trys fix it, you choose good or not. I calibrated touch like iPhone 14 Pro Max. Maybe in future updates i will change something.
+## Else
+FEXT v1 has:
+- RAM Management 
+- ZRAM 4 GB
+
+Check changelog about other features, what i can add in next version
