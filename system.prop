@@ -1,0 +1,20 @@
+# memory
+persist.vendor.ssr.enable_ramdumps=0
+ro.vendor.qti.sys.fw.bservice_age=300000
+ro.vendor.qti.sys.fw.bservice_limit=15
+ro.vendor.qti.sys.fw.bservice_enable=true
+ro.vendor.qti.sys.fw.bg_apps_limit=60
+
+# input
+touch.size.calibration=diameter
+touch.size.scale=2.855
+touch.size.bias=5
+touch.size.isSummed=1
+touch.pressure.calibration=amplitude
+touch.pressure.scale=0.0125
+touch.orientation.calibration=none
+touch.distance.calibration=none
+touch.distance.scale=0.0 
+persist.sys.launch_delay=200
+persist.sys.launch_exception_delay=700
+persist.sys.launch_second_delay=100
