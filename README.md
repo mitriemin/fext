@@ -4,3 +4,15 @@ This is comprehensive module for realme GT2 Pro (ferrari), it can be used with a
 - Magisk by topjohnwu or KSU by tiann
 - 8 Gen 1 or 8 Gen+ 1
 - realme UI 4.0 and higher
+
+## Overheating
+Known issue 8 Gen 1 is overheating. My module fix it. What we have alternative?
+
+- [perf limit xiaomi 12] (https://github.com/Magisk-Modules-Alt-Repo/perf-limit-xiaomi-12 "GitHub")
+- Frigus Thermal
+
+Perf limit, is only lock max freqs. It can't full fix overheating, but downgrade performance.
+
+Frigus Thermal incorrect work, because it check CPU temperature sensors, what can show very big jumping (±10°C/m).
+
+My module check CPU temp like Frigus, but correct value and then select one of limit for freqs like perf limit. But it doesn't all. I changed some kernel settings for better cooling device. It's all help FEXT show lowest temp in hard scenes and save performance bigger then MTK 8200 Ultra, SD870, Tensor G2
