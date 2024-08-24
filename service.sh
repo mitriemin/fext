@@ -1,91 +1,62 @@
-# functions
-lock_var() {
-	[ ! -f "$2" ] && return
-	umount "$2"
-
-	chown root:root "$2"
-	chmod 0666 "$2"
-	echo "$1" >"$2"
-	chmod 0444 "$2"
-
-	local TIME=$(date +"%s%N")
-	echo "$1" >/dev/mount_mask_$TIME
-	mount --bind /dev/mount_mask_$TIME "$2"
-	rm /dev/mount_mask_$TIME
-}
-set_var() {
-	if [ -f ${2} ]; then
-		chmod 0666 ${2}
-		echo ${1} > ${2}
-		chmod 0444 ${2}
+write() {
+	if test -f "$1"; then
+		chmod +w "$1"
+		echo "$2" > "$1"
+		chmod 0444 "$1"
 	fi
 }
-thermal_xt()
-{
-    cpu_temp=$(cat /sys/class/thermal/thermal_zone77/temp)
-    if [ "${cpu_temp}" -gt "45000" ]; then
-        if [ "${cpu_temp}" -gt "50000" ]; then
-            set_var "1651200" /sys/devices/system/cpu/cpufreq/policy4/scaling_max_freq
-            set_var "806400" /sys/devices/system/cpu/cpufreq/policy7/scaling_max_freq
-            set_var "1363200" /sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq
-            set_var 6 /sys/class/kgsl/kgsl-3d0/max_pwrlevel
-        elif [ "${cpu_temp}" -gt "55000" ]; then
-            set_var "1440000" /sys/devices/system/cpu/cpufreq/policy4/scaling_max_freq
-            set_var "806400" /sys/devices/system/cpu/cpufreq/policy7/scaling_max_freq
-            set_var "1267200" /sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq
-            set_var 8 /sys/class/kgsl/kgsl-3d0/max_pwrlevel
-        elif [ "${cpu_temp}" -gt "59000" ]; then
-            set_var "1324800" /sys/devices/system/cpu/cpufreq/policy4/scaling_max_freq
-            set_var "806400" /sys/devices/system/cpu/cpufreq/policy7/scaling_max_freq
-            set_var "1171200" /sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq
-            set_var 10 /sys/class/kgsl/kgsl-3d0/max_pwrlevel
-        else
-            set_var "1881600" /sys/devices/system/cpu/cpufreq/policy4/scaling_max_freq
-            set_var "1286400" /sys/devices/system/cpu/cpufreq/policy7/scaling_max_freq
-            set_var "1478400" /sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq
-        fi
-    else
-        set_var "1996800" /sys/devices/system/cpu/cpufreq/policy4/scaling_max_freq
-        set_var "1401600" /sys/devices/system/cpu/cpufreq/policy7/scaling_max_freq
-        set_var "1574400" /sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq
-        set_var 4 /sys/class/kgsl/kgsl-3d0/max_pwrlevel
-    fi
-} 
 
-# changes in kernel
-lock_var 4096 /proc/sys/kernel/random/poolsize
-lock_var 4096 /proc/sys/kernel/random/entropy_avail
-lock_var 1024 /proc/sys/kernel/random/write_wakeup_threshold
-lock_var 0 /sys/module/kfence/parameters/sample_interval
-lock_var 0 /proc/sys/walt/sched_force_lb_enable
-lock_var 0 /sys/devices/system/cpu/c1dcvs/enable_c1dcvs
-lock_var 0 /proc/sys/kernel/sched_pelt_multiplier
-for i in /sys/devices/virtual/thermal/cooling_device*/
-do
-    lock_var 0 $i/max_state
-    lock_var 0 $i/cur_state
+test_file=/sdcard/Android/.test
+
+while test ! -f "$test_file"; do
+	touch "$test_file"
+	sleep 1
 done
 
-# wait mount sdcard
-while [ ! -d /sdcard ]; do
-    sleep 5
+rm $test_file
+
+sysctl -q kernel.sched_util_clamp_min_rt_default=96
+sysctl -q kernel.sched_util_clamp_min=128
+
+for d in $(find /dev/cpuctl /dev/cpuset -type d -mindepth 1 -maxdepth 1); do
+	case $(basename $d) in
+		top-app)
+			write $d/cpu.uclamp.max max
+			write $d/cpu.uclamp.min 10
+			write $d/sched_load_balance 0
+			write $d/uclamp.latency_sensitive 1
+		;;
+		foreground)
+			write $d/cpu.uclamp.max 50
+			write $d/cpu.uclamp.min 0
+			write $d/uclamp.latency_sensitive 0
+		;;
+		background)
+			write $d/cpu.uclamp.max max
+			write $d/cpu.uclamp.min 20
+			write $d/uclamp.latency_sensitive 0
+		;;
+		system-background)
+			write $d/cpu.uclamp.max 40
+			write $d/cpu.uclamp.min 0
+			write $d/uclamp.latency_sensitive 0
+		;;
+		*)
+			for task in $(); do
+				echo $task > $(dirname $d)/cgroup.procs
+			done
+			
+			chmod 0444 $d/tasks
+		;;
+	esac
 done
 
-# ZRAM size 4 GB with lz4 compression
-swapoff /dev/block/zram0
-echo 1 > sys/block/zram0/reset
-echo "3" > /proc/sys/vm/drop_caches
-set_var lz4 /sys/block/zram0/comp_algorithm
-set_var 4294967296 /sys/block/zram0/disksize
-mkswap /dev/block/zram0 > /dev/null 2>&1
-swapon /dev/block/zram0 > /dev/null 2>&1
+write /sys/devices/platform/soc/soc:oplus-ormg/oplus-ormg0/ruler_enable 0
 
-# thermal_xt
-while true; do
-    sleep 10
-    mWakefulness=$(dumpsys power | grep mWakefulness= | head -1 | cut -d "=" -f2)
-    if [ "${mWakefulness}" == "Dozing" ] || [ "${mWakefulness}" == "Asleep" ] ; then
-        continue
-    fi
-    thermal_xt
+for n in $(seq 0 7); do
+	cpu_core=/sys/devices/system/cpu/cpu$n
+	max_freq=$(cat $cpu_core/cpufreq/cpuinfo_max_freq)
+	write /sys/kernel/msm_perfomance/parameters/cpu_max_freq $n:$max_freq
+	echo $max_freq > $cpu_core/cpufreq/scaling_max_freq
+	write $cpu_core/online 1
 done
